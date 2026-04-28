@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    /* File Layout */
+    "rootDir": "./src",        // <--- UNCOMMENT THIS
+    "outDir": "./dist",       // <--- UNCOMMENT THIS
+
+    /* Environment Settings */
+    "module": "nodenext",
+    "target": "esnext",
+    "types": ["node"],        // Add "node" here for better support
+    
+    /* Recommended Options */
+    "strict": false,
+    "noImplicitAny": false,
+    "jsx": "react-jsx",
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true,
+    "skipLibCheck": true,
+    "moduleDetection": "force"
+  },
+  "include": ["src/**/*"],    // Add this to tell TS to only look at src
+  "exclude": ["node_modules"]
+}

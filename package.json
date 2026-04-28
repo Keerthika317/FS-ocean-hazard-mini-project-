@@ -1,0 +1,22 @@
+{
+  "name": "ocean-hazard-fullstack",
+  "version": "1.0.0",
+  "description": "Ocean Hazard Monitoring System",
+  "scripts": {
+    "start": "concurrently \"npm run server\" \"npm run client\"",
+    "server": "cd server && npm run dev",
+    "client": "cd client && npm run dev",
+    "install-all": "npm install && cd client && npm install && cd ../server && npm install",
+    "build": "cd client && npm run build && cd ../server && npm run build",
+    "prod": "concurrently \"npm run server-prod\" \"npm run client-prod\"",
+    "server-prod": "cd server && npm start",
+    "client-prod": "cd client && npm run preview"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "main": "index.js",
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
