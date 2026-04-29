@@ -1,16 +1,18 @@
 // index.ts
 import express from 'express';
+import { Resend } from 'resend';
+import dotenv from 'dotenv'; 
 import mysql from 'mysql2';
 import cors from 'cors';
 import http from 'http';
 import { Server } from 'socket.io';
-import dotenv from 'dotenv';
+
 import fs from 'fs';
 import path from 'path';
 import axios from 'axios';
 import nodemailer from 'nodemailer';
 import multer from 'multer';
-import { Resend } from 'resend';
+
 
 dotenv.config();
 
