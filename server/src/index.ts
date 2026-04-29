@@ -12,7 +12,13 @@ import path from 'path';
 import axios from 'axios';
 import nodemailer from 'nodemailer';
 import multer from 'multer';
+import webpush from 'web-push';
 
+webpush.setVapidDetails(
+    'mailto:keerthikaselvakumar45@gmail.com', // Replace with your email
+    process.env.VAPID_PUBLIC_KEY!,
+    process.env.VAPID_PRIVATE_KEY!
+);
 
 dotenv.config();
 
@@ -118,7 +124,12 @@ db.query(`CREATE TABLE IF NOT EXISTS users (
     role VARCHAR(50),
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 )`);
-
+db.query(`CREATE TABLE IF NOT EXISTS push_subscriptions (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    user_id INT,
+    subscription_data TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+)`);
 // Add columns if needed
 db.query(`SHOW COLUMNS FROM hazard_reports LIKE 'user_id'`, (err, results) => {
     if (err) console.error("Error checking user_id column:", err);
@@ -323,6 +334,18 @@ const insertPredefinedHazardsIntoDB = async () => {
 
 // ============ API ROUTES ============
 
+const triggerPush = (userId: number, title: string, message: string) => {
+    db.query('SELECT subscription_data FROM push_subscriptions WHERE user_id = ?', [userId], (err: any, results: any) => {
+        if (results && (results as any).length > 0) {
+            const subscription = JSON.parse((results as any)[0].subscription_data);
+            const payload = JSON.stringify({ title, message });
+
+            webpush.sendNotification(subscription, payload).catch((error) => {
+                console.error("Push Error:", error);
+            });
+        }
+    });
+};
 app.get('/api/reports', (req: any, res: any) => {
     db.query('SELECT * FROM hazard_reports ORDER BY created_at DESC', (err, results) => {
         if (err) return res.status(500).json(err);
@@ -390,11 +413,16 @@ app.post('/api/reports', multer({ dest: './uploads/' }).single('photo'), (req: a
 app.patch('/api/reports/:id/status', (req: any, res: any) => {
     const { status } = req.body;
     db.query('SELECT * FROM hazard_reports WHERE id = ?', [req.params.id], (err, results: any) => {
-        if (!results || results.length === 0) return res.status(404).json({ error: "Not found" });
-        const report = results[0];
+        if (!results || (results as any).length === 0) return res.status(404).json({ error: "Not found" });
+        const report = (results as any)[0];
         
         db.query('UPDATE hazard_reports SET status = ? WHERE id = ?', [status, req.params.id], () => {
             res.json({ msg: 'ok' });
+            
+            // --- ADD THIS LINE TO NOTIFY THE USER ---
+            triggerPush(report.user_id, "OceanPulse Update", `Status changed to: ${status}`);
+            
+            // Also send email
             sendStatusEmailToReporter(report, status);
         });
     });
@@ -441,6 +469,23 @@ app.get('/api/export-csv', (req: any, res: any) => {
 });
 
 // ============ AUTH ============
+app.post('/api/subscribe', (req: any, res: any) => {
+    const { user_id, subscription } = req.body;
+    
+    // This saves the subscription data to the database
+    // If the user logs in on a new device, it updates the existing record (ON DUPLICATE KEY)
+    const sql = `INSERT INTO push_subscriptions (user_id, subscription_data) 
+                 VALUES (?, ?) 
+                 ON DUPLICATE KEY UPDATE subscription_data = ?`;
+                 
+    db.query(sql, [user_id, subscription, subscription], (err: any) => {
+        if (err) {
+            console.error("Error saving subscription:", err);
+            return res.status(500).json({ error: "Failed to subscribe" });
+        }
+        res.json({ success: true });
+    });
+});
 app.post('/api/signup', (req: any, res: any) => {
     const { username, password, role, email } = req.body;
     db.query('INSERT INTO users (username, password, role, email) VALUES (?, ?, ?, ?)', [username, password, role, email], (err, result: any) => {

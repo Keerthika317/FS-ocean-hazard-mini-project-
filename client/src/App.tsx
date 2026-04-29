@@ -1162,6 +1162,22 @@ const Dashboard = ({ user, role, setView, setUser, finalStyles, theme, setTheme,
 // Main App Component
 const App = () => {
     const [view, setView] = useState('home');
+    const subscribeUser = async (userId: number) => {
+    try {
+        const registration = await navigator.serviceWorker.register('/sw.js');
+        const subscription = await registration.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: 'BIv7zluS5iaRzuP1_ZLuguonG8XPNfneOq610YHvYq3uWNtWEWtHbT7U6bb0v_KtsxAEFqI23ZAW0WvxyTU4lI8'
+        });
+
+        await axios.post(`${API_URL}/api/subscribe`, {
+            user_id: userId,
+            subscription: JSON.stringify(subscription)
+        });
+    } catch (err) {
+        console.error("Push subscription failed:", err);
+    }
+};
     const [isSignup, setIsSignup] = useState(false);
     const [role, setRole] = useState('reporter');
     const [user, setUser] = useState(null);
@@ -1251,6 +1267,7 @@ const App = () => {
                             } else { 
                                 setUser(res.data); 
                                 setView('dashboard'); 
+                                subscribeUser(res.data.id);
                                 toast.success(` Welcome back, ${res.data.username}!`);
                             } 
                         } catch (error) { 
