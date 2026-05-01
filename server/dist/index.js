@@ -666,7 +666,7 @@ app.post('/api/reports', upload.single('photo'), async (req, res) => {
             id: result.insertId, reporter_name, reporter_email, hazard_type, location,
             severity, impact_radius: validImpactRadius, risk_count: validRiskCount, photo_url
         };
-        const fullPhotoUrl = photo_url ? `http://localhost:5000/api/view-image/${photo_url}` : null;
+        const fullPhotoUrl = photo_url ? `https://ocean-hazard-backend-2of1.onrender.com/api/view-image/${photo_url}` : null;
         await sendReportToAdmin(reportData, fullPhotoUrl);
         sendPopupNotification('SUCCESS', ' Report Submitted', `Your ${hazard_type} report sent`);
         res.status(201).json({ message: 'Report submitted successfully', id: result.insertId });

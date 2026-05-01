@@ -14,7 +14,7 @@ const UserLogin = ({ onBack, onLogin, onSignup }) => {
     setLoading(true);
     
     try {
-      const response = await axios.post('http://localhost:5000/api/login', formData);
+      const response = await axios.post('https://ocean-hazard-backend-2of1.onrender.com/api/login', formData);
       if (response.data) {
         onLogin(response.data);
       }

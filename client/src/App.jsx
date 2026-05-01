@@ -8,7 +8,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 
-const API_URL = 'http://localhost:5000';
+const API_URL = 'https://ocean-hazard-backend-2of1.onrender.com';
 
 // Fix Leaflet icons
 delete L.Icon.Default.prototype._getIconUrl;

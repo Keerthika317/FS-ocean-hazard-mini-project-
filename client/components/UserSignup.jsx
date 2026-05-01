@@ -15,7 +15,7 @@ const UserSignup = ({ onBack, onSuccess }) => {
     setLoading(true);
     
     try {
-      const response = await axios.post('http://localhost:5000/api/signup', formData);
+      const response = await axios.post('https://ocean-hazard-backend-2of1.onrender.com/api/signup', formData);
       if (response.data) {
         toast.success('Account created successfully! Please login.');
         onSuccess();
