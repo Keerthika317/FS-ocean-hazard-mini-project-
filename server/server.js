@@ -294,19 +294,22 @@ app.get('/api/top-locations', (req, res) => {
 });
 
 // ============== HAZARD ROUTES ==============
+// Get ALL hazards (Admin)
 app.get('/api/hazards', (req, res) => {
-    db.query(`SELECT h.*, u.username as reporter_name FROM hazards h LEFT JOIN users u ON h.user_id = u.id ORDER BY h.created_at DESC`, (err, results) => {
+    db.query('SELECT * FROM hazards ORDER BY created_at DESC', (err, results) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json(results);
     });
 });
 
+// 2. Fixed User Route
 app.get('/api/user-hazards/:userId', (req, res) => {
     db.query('SELECT * FROM hazards WHERE user_id = ? ORDER BY created_at DESC', [req.params.userId], (err, results) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json(results);
     });
 });
+
 
 app.post('/api/hazards', upload.single('photo'), (req, res) => {
     const { user_id, hazard_type, location, severity, radius, people_affected } = req.body;

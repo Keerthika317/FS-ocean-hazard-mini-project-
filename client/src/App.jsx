@@ -600,44 +600,51 @@ function App() {
     };
 
     const handleSubmitHazard = async (e) => {
-        e.preventDefault();
-        if (!formData.hazard_type || !formData.location || !formData.radius || !formData.people_affected) {
-            toast.error('Please fill all fields');
-            return;
-        }
-        setSubmitting(true);
-        const data = new FormData();
-        if (user && user.id) {
-    data.append('user_id', user?.id || localStorage.getItem('userId'));
-} else {
-    toast.error("User session expired. Please login again.");
-    return;
-}
-        data.append('user_id', user?.id || localStorage.getItem('userId'));
-        data.append('hazard_type', formData.hazard_type);
-        data.append('location', formData.location);
-        data.append('severity', formData.severity);
-        data.append('radius', formData.radius);
-        data.append('people_affected', formData.people_affected);
-        if (formData.photo) data.append('photo', formData.photo);
-        
-        try {
-            const response = await axios.post(`${API_URL}/api/hazards`, data);
-            toast.success('Hazard reported successfully!');
-            const riskScore = calculateRiskScore(formData.severity, formData.people_affected, formData.radius);
-            toast.info(`Risk Score: ${riskScore}/100`);
-            setFormData({ hazard_type: '', location: '', severity: 'Low', radius: '', people_affected: '', photo: null });
-            document.getElementById('photoInput').value = '';
-            fetchUserData();
-            setRecentlyUpdatedId(response.data.id);
-            setTimeout(() => setRecentlyUpdatedId(null), 5000);
-        } catch (error) {
-            toast.error('Submission failed');
-        } finally {
-            setSubmitting(false);
-        }
-    };
+    e.preventDefault();
+    
+    if (!formData.hazard_type || !formData.location || !formData.radius || !formData.people_affected) {
+        toast.error('Please fill all fields');
+        return;
+    }
 
+    setSubmitting(true);
+    const data = new FormData();
+    
+    // Safety check for User ID
+    const userId = user?.id || localStorage.getItem('userId') || "1";
+    
+    data.append('user_id', userId);
+    data.append('hazard_type', formData.hazard_type);
+    data.append('location', formData.location);
+    data.append('severity', formData.severity);
+    data.append('radius', formData.radius);
+    data.append('people_affected', formData.people_affected);
+    if (formData.photo) data.append('photo', formData.photo);
+    
+    try {
+        const response = await axios.post(`${API_URL}/api/hazards`, data);
+        toast.success('Hazard reported successfully!');
+        
+        // REFRESH DATA IMMEDIATELY
+        if (user?.role === 'admin') {
+            fetchAdminData(); 
+        } else {
+            fetchUserData();
+        }
+
+        // Reset Form
+        setFormData({ hazard_type: '', location: '', severity: 'Low', radius: '', people_affected: '', photo: null });
+        if (document.getElementById('photoInput')) document.getElementById('photoInput').value = '';
+        
+        setRecentlyUpdatedId(response.data.id);
+        setTimeout(() => setRecentlyUpdatedId(null), 5000);
+    } catch (error) {
+        console.error("Submission error:", error);
+        toast.error('Submission failed');
+    } finally {
+        setSubmitting(false);
+    }
+};
     const handleUpdateStatus = async (id, status) => {
         if (adminRole !== 'editor') {
             toast.error('Edit mode required');
