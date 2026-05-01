@@ -1,4 +1,5 @@
 // server.js (FIXED VERSION)
+import 'dotenv/config';
 import express from 'express';
 import mysql from 'mysql2';
 import cors from 'cors';
@@ -11,16 +12,21 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;
 
 app.use(cors());
 app.use(express.json());
 
+// 3. REPLACE your current 'const db' block with this exactly:
 const db = mysql.createConnection({
-    host: 'localhost',
-    user: 'root',
-    password: 'keerthi21',
-    database: 'ocean_hazard_db'
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
+    port: process.env.DB_PORT || 28745,
+    ssl: {
+        rejectUnauthorized: false // REQUIRED for Aiven cloud
+    }
 });
 
 db.connect((err) => {
@@ -28,7 +34,8 @@ db.connect((err) => {
         console.error('Database connection failed:', err);
         process.exit(1);
     }
-    console.log('Connected to MySQL database');
+    
+    console.log('Connected to Aiven MySQL database successfully!');
     createTables();
 });
 
