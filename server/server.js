@@ -313,19 +313,29 @@ app.post('/api/hazards', upload.single('photo'), async (req, res) => {
     const photo_url = req.file ? req.file.filename : null;
     const [latitude, longitude] = getCoordinatesForLocation(location);
     
-    db.query(`INSERT INTO hazards (user_id, hazard_type, location, severity, radius, people_affected, photo_url, latitude, longitude) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [user_id, hazard_type, location, severity, radius, people_affected, photo_url, latitude, longitude],
-        async (err, result) => {
-            if (err) return res.status(500).json({ error: err.message });
-            db.query('SELECT username FROM users WHERE id = ?', [user_id], (err2, users) => {
-                createActivityLog('Hazard Reported', users[0]?.username || 'Unknown', hazard_type, location, `Severity: ${severity}`);
-            });
-            await createNotification(user_id, 'user', `Your ${hazard_type} report at ${location} has been submitted.`, 'success');
-            if (severity === 'High') {
-                await createNotification(user_id, 'user', `⚠️ HIGH SEVERITY: ${hazard_type} at ${location} needs immediate attention!`, 'danger');
-            }
-            res.status(201).json({ message: 'Report submitted', id: result.insertId });
+    // THE FIX: Added 'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
+    const sql = `INSERT INTO hazards (user_id, hazard_type, location, severity, radius, people_affected, photo_url, latitude, longitude) 
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+    
+    const values = [user_id, hazard_type, location, severity, radius, people_affected, photo_url, latitude, longitude];
+
+    db.query(sql, values, async (err, result) => {
+        if (err) {
+            console.error("DATABASE INSERT ERROR:", err); // This will now show in Render Logs
+            return res.status(500).json({ error: err.message });
+        }
+
+        db.query('SELECT username FROM users WHERE id = ?', [user_id], (err2, users) => {
+            createActivityLog('Hazard Reported', users[0]?.username || 'Unknown', hazard_type, location, `Severity: ${severity}`);
         });
+
+        await createNotification(user_id, 'user', `Your ${hazard_type} report at ${location} has been submitted.`, 'success');
+        
+        if (severity === 'High') {
+            await createNotification(user_id, 'user', `⚠️ HIGH SEVERITY: ${hazard_type} at ${location} needs immediate attention!`, 'danger');
+        }
+        res.status(201).json({ message: 'Report submitted', id: result.insertId });
+    });
 });
 
 app.put('/api/hazards/:id/status', requireEditor, async (req, res) => {
