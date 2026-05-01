@@ -506,27 +506,23 @@ function App() {
         }
     }, [user, notificationsEnabled]);
 
-    const fetchAdminData = useCallback(async () => {
-        try {
-            const [hazardsRes, notifsRes, activitiesRes, hazardStatsRes, statusStatsRes, topLocationsRes] = await Promise.all([
-                axios.get(`${API_URL}/api/hazards`),
-                axios.get(`${API_URL}/api/admin/notifications`),
-                axios.get(`${API_URL}/api/activity-logs`),
-                axios.get(`${API_URL}/api/hazard-stats`),
-                axios.get(`${API_URL}/api/status-stats`),
-                axios.get(`${API_URL}/api/top-locations`)
-            ]);
-            setHazards(hazardsRes.data);
-            setNotifications(notifsRes.data);
-            setActivities(activitiesRes.data);
-            setHazardStats(hazardStatsRes.data || []);
-            setStatusStats(statusStatsRes.data || []);
-            setTopLocations(topLocationsRes.data);
-            setLastUpdated(new Date());
-        } catch (error) {
-            console.error(error);
-        }
-    }, []);
+  const fetchAdminData = useCallback(async () => {
+    try {
+        const [hazardsRes, logsRes, hStatsRes, sStatsRes, topRes] = await Promise.all([
+            axios.get(`${API_URL}/api/hazards`),
+            axios.get(`${API_URL}/api/activity-logs`),
+            axios.get(`${API_URL}/api/hazard-stats`),
+            axios.get(`${API_URL}/api/status-stats`),
+            axios.get(`${API_URL}/api/top-locations`)
+        ]);
+        setHazards(hazardsRes.data || []);
+        setActivities(logsRes.data || []);
+        setHazardStats(hStatsRes.data || []);
+        setStatusStats(sStatsRes.data || []);
+        setTopLocations(topRes.data || []);
+        setLastUpdated(new Date());
+    } catch (error) { console.error("Admin data fetch error:", error); }
+}, []);
 
     useEffect(() => {
         if (currentScreen === 'userDashboard' && user && autoRefresh) {
@@ -645,12 +641,15 @@ function App() {
         setSubmitting(false);
     }
 };
-   const handleUpdateStatus = async (id, status) => {
+const handleUpdateStatus = async (id, status) => {
     try {
         await axios.put(`${API_URL}/api/hazards/${id}/status`, { status });
-        toast.success(`Status updated!`);
-        fetchAdminData(); // This updates charts and counts in real-time
-    } catch (error) { toast.error('Update failed'); }
+        toast.success(`Status updated to ${status}`);
+        // THIS IS THE REAL-TIME KEY:
+        fetchAdminData(); 
+    } catch (error) {
+        toast.error('Failed to update status');
+    }
 };
 
 const handleDeleteHazard = async (id) => {
