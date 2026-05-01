@@ -312,24 +312,21 @@ app.post('/api/hazards', upload.single('photo'), (req, res) => {
     try {
         const { user_id, hazard_type, location, severity, radius, people_affected } = req.body;
         const [lat, lng] = getCoordinatesForLocation(location);
-        
         const photo_url = req.file ? req.file.filename : null;
 
-        // THE GUARANTEED FIX: Explicitly naming every column and every value
-        const sql = `INSERT INTO hazards 
-            (user_id, hazard_type, location, severity, radius, people_affected, photo_url, latitude, longitude, status) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+        // THE FINAL FIX: Standard SQL with 10 columns and 10 values
+        const sql = "INSERT INTO hazards (user_id, hazard_type, location, severity, radius, people_affected, photo_url, latitude, longitude, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         
         const values = [
-            user_id || "1", 
-            hazard_type || "General", 
-            location || "Unknown", 
-            severity || "Low", 
-            String(radius || "0"), 
-            String(people_affected || "0"), 
-            photo_url, 
-            String(lat || ""), 
-            String(lng || ""), 
+            user_id || "1",
+            hazard_type || "Other",
+            location || "Unknown",
+            severity || "Low",
+            String(radius || "0"),
+            String(people_affected || "0"),
+            photo_url,
+            String(lat || ""),
+            String(lng || ""),
             "Pending"
         ];
 
@@ -338,12 +335,12 @@ app.post('/api/hazards', upload.single('photo'), (req, res) => {
                 console.error("DATABASE ERROR:", err.message);
                 return res.status(500).json({ error: err.message });
             }
-            console.log("Success! New Hazard ID:", result.insertId);
+            console.log("Hazard saved! ID:", result.insertId);
             res.status(201).json({ message: 'Success', id: result.insertId });
         });
     } catch (error) {
         console.error("SERVER CRASH:", error);
-        res.status(500).json({ error: "Server Error" });
+        res.status(500).json({ error: "Internal Server Error" });
     }
 });
 
