@@ -80,19 +80,29 @@ app.post('/api/login', (req, res) => {
 app.post('/api/admin/login', (req, res) => {
     const { email, password } = req.body;
     
-    // Simplest possible query to avoid 500 errors
-    const sql = 'SELECT * FROM users WHERE email = ? AND password = ? AND role = "admin"';
+    // We log the attempt so you can see it in Render Logs
+    console.log("Login attempt for email:", email);
+
+    const sql = 'SELECT * FROM users WHERE email = ? AND password = ?';
     
     db.query(sql, [email, password], (err, results) => {
         if (err) {
-            console.error("LOGIN ERROR:", err.message);
-            return res.status(500).json({ error: err.message });
+            console.error("DATABASE ERROR:", err.message);
+            return res.status(500).json({ error: "Internal Server Error" });
         }
         
         if (results && results.length > 0) {
-            res.json(results[0]);
+            const user = results[0];
+            // Check if the user is actually an admin
+            if (user.role === 'admin') {
+                console.log("Admin logged in successfully");
+                return res.json(user);
+            } else {
+                return res.status(401).json({ error: "Access denied: Not an admin" });
+            }
         } else {
-            res.status(401).json({ error: "Invalid credentials" });
+            console.log("Login failed: User not found or wrong password");
+            return res.status(401).json({ error: "Invalid credentials" });
         }
     });
 });
