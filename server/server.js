@@ -310,12 +310,10 @@ app.get('/api/user-hazards/:userId', (req, res) => {
 
 app.post('/api/hazards', upload.single('photo'), async (req, res) => {
     try {
-        console.log("Data received from frontend:", req.body);
-        
         const { user_id, hazard_type, location, severity, radius, people_affected } = req.body;
         const [lat, lng] = getCoordinatesForLocation(location);
         
-        // Create an object exactly matching the database columns
+        // This format matches the table we just created in Step 1
         const hazardData = {
             user_id: user_id || null,
             hazard_type: hazard_type,
@@ -329,19 +327,19 @@ app.post('/api/hazards', upload.single('photo'), async (req, res) => {
             status: 'Pending'
         };
 
-        // This 'SET ?' syntax is the safest way to insert in Node.js
-        const sql = "INSERT INTO hazards SET ?";
-        
-        db.query(sql, hazardData, (err, result) => {
+        console.log("Saving Hazard to Database:", hazardData);
+
+        // Using 'SET ?' is the safest way to avoid "Column Count" errors
+        db.query("INSERT INTO hazards SET ?", hazardData, (err, result) => {
             if (err) {
                 console.error("DATABASE ERROR:", err.message);
                 return res.status(500).json({ error: err.message });
             }
-            console.log("Hazard saved with ID:", result.insertId);
+            console.log("Success! Hazard ID:", result.insertId);
             res.status(201).json({ message: 'Success', id: result.insertId });
         });
     } catch (error) {
-        console.error("CRITICAL SERVER ERROR:", error);
+        console.error("SERVER CRASH:", error);
         res.status(500).json({ error: "Internal Server Error" });
     }
 });
