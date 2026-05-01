@@ -309,33 +309,37 @@ app.get('/api/user-hazards/:userId', (req, res) => {
 });
 
 app.post('/api/hazards', upload.single('photo'), async (req, res) => {
-    const { user_id, hazard_type, location, severity, radius, people_affected } = req.body;
-    const photo_url = req.file ? req.file.filename : null;
-    const [latitude, longitude] = getCoordinatesForLocation(location);
-    
-    // THE FIX: Added 'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
-    const sql = `INSERT INTO hazards (user_id, hazard_type, location, severity, radius, people_affected, photo_url, latitude, longitude) 
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
-    
-    const values = [user_id, hazard_type, location, severity, radius, people_affected, photo_url, latitude, longitude];
-
-    db.query(sql, values, async (err, result) => {
-        if (err) {
-            console.error("DATABASE INSERT ERROR:", err); // This will now show in Render Logs
-            return res.status(500).json({ error: err.message });
-        }
-
-        db.query('SELECT username FROM users WHERE id = ?', [user_id], (err2, users) => {
-            createActivityLog('Hazard Reported', users[0]?.username || 'Unknown', hazard_type, location, `Severity: ${severity}`);
-        });
-
-        await createNotification(user_id, 'user', `Your ${hazard_type} report at ${location} has been submitted.`, 'success');
+    try {
+        const { user_id, hazard_type, location, severity, radius, people_affected } = req.body;
+        const photo_url = req.file ? req.file.filename : null;
+        const [latitude, longitude] = getCoordinatesForLocation(location);
         
-        if (severity === 'High') {
-            await createNotification(user_id, 'user', `⚠️ HIGH SEVERITY: ${hazard_type} at ${location} needs immediate attention!`, 'danger');
-        }
-        res.status(201).json({ message: 'Report submitted', id: result.insertId });
-    });
+        // This query has exactly 9 columns and 9 question marks
+        const sql = `INSERT INTO hazards (user_id, hazard_type, location, severity, radius, people_affected, photo_url, latitude, longitude) 
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+        
+        const values = [user_id, hazard_type, location, severity, radius, people_affected, photo_url, latitude, longitude];
+
+        db.query(sql, values, async (err, result) => {
+            if (err) {
+                console.error("DATABASE ERROR:", err.message);
+                return res.status(500).json({ error: err.message });
+            }
+
+            // Log activity
+            db.query('SELECT username FROM users WHERE id = ?', [user_id], (err2, users) => {
+                createActivityLog('Hazard Reported', users[0]?.username || 'User', hazard_type, location);
+            });
+
+            // Send notification
+            await createNotification(user_id, 'user', `Report submitted for ${location}`, 'success');
+            
+            res.status(201).json({ message: 'Report submitted', id: result.insertId });
+        });
+    } catch (error) {
+        console.error("SERVER ERROR:", error);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
 });
 
 app.put('/api/hazards/:id/status', requireEditor, async (req, res) => {
