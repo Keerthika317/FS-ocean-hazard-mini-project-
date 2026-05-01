@@ -313,10 +313,9 @@ app.post('/api/hazards', upload.single('photo'), (req, res) => {
         const { user_id, hazard_type, location, severity, radius, people_affected } = req.body;
         const [lat, lng] = getCoordinatesForLocation(location);
         
-        // We create an object that matches the table columns exactly
         const hazardData = {
-            user_id: user_id || "1", // Defaults to 1 if missing
-            hazard_type: hazard_type || "Unknown",
+            user_id: user_id || "1",
+            hazard_type: hazard_type || "General",
             location: location || "Unknown",
             severity: severity || "Low",
             radius: String(radius || "0"),
@@ -327,15 +326,13 @@ app.post('/api/hazards', upload.single('photo'), (req, res) => {
             status: "Pending"
         };
 
-        console.log("Attempting to save:", hazardData);
-
-        // This 'SET ?' automatically maps keys to columns
+        // This matches the table from Step 1 perfectly
         db.query("INSERT INTO hazards SET ?", hazardData, (err, result) => {
             if (err) {
                 console.error("DATABASE ERROR:", err.message);
                 return res.status(500).json({ error: err.message });
             }
-            console.log("Success! ID:", result.insertId);
+            console.log("Hazard Saved Successfully!");
             res.status(201).json({ message: 'Success', id: result.insertId });
         });
     } catch (error) {
