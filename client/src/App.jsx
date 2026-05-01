@@ -607,7 +607,13 @@ function App() {
         }
         setSubmitting(true);
         const data = new FormData();
-        data.append('user_id', user.id);
+        if (user && user.id) {
+    data.append('user_id', user?.id || localStorage.getItem('userId'));
+} else {
+    toast.error("User session expired. Please login again.");
+    return;
+}
+        data.append('user_id', user?.id || localStorage.getItem('userId'));
         data.append('hazard_type', formData.hazard_type);
         data.append('location', formData.location);
         data.append('severity', formData.severity);
@@ -1401,9 +1407,9 @@ function App() {
 
     // ============== ADMIN DASHBOARD ==============
     if (currentScreen === 'adminDashboard') {
-        const pendingCount = hazards.filter((h) => h.status === 'Pending').length;
-        const inProgressCount = hazards.filter((h) => h.status === 'In-Progress').length;
-        const resolvedCount = hazards.filter((h) => h.status === 'Resolved').length;
+       const pendingCount = hazards.filter((h) => h.status?.toLowerCase() === 'pending').length;
+       const inProgressCount = hazards.filter((h) => h.status?.toLowerCase() === 'in-progress').length;
+       const resolvedCount = hazards.filter((h) => h.status?.toLowerCase() === 'resolved').length;
         const completionRate = hazards.length ? Math.round((resolvedCount / hazards.length) * 100) : 0;
         
         return (
