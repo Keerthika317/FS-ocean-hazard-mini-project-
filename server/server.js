@@ -77,27 +77,22 @@ app.post('/api/login', (req, res) => {
         res.json(results[0]);
     });
 });
-
 app.post('/api/admin/login', (req, res) => {
-    // We trim spaces and lowercase the email to avoid typing errors
-    const email = req.body.email?.toLowerCase().trim();
-    const password = req.body.password?.trim();
-
-    console.log(`Admin login attempt: ${email}`);
-
-    const sql = 'SELECT * FROM users WHERE LOWER(email) = ? AND password = ? AND role = "admin"';
+    const { email, password } = req.body;
+    
+    // Simplest possible query to avoid 500 errors
+    const sql = 'SELECT * FROM users WHERE email = ? AND password = ? AND role = "admin"';
+    
     db.query(sql, [email, password], (err, results) => {
         if (err) {
-            console.error("Login DB Error:", err);
-            return res.status(500).json({ error: "DB Error" });
+            console.error("LOGIN ERROR:", err.message);
+            return res.status(500).json({ error: err.message });
         }
         
-        if (results.length > 0) {
-            console.log("Admin login SUCCESS");
+        if (results && results.length > 0) {
             res.json(results[0]);
         } else {
-            console.log("Admin login FAILED - Check credentials in CMD");
-            res.status(401).json({ error: 'Invalid' });
+            res.status(401).json({ error: "Invalid credentials" });
         }
     });
 });
