@@ -1,9 +1,7 @@
 // src/emailService.ts
 import nodemailer from 'nodemailer';
 import dotenv from 'dotenv';
-
 dotenv.config();
-
 // Create transporter using Gmail
 const transporter = nodemailer.createTransport({
     service: 'gmail',
@@ -12,9 +10,8 @@ const transporter = nodemailer.createTransport({
         pass: process.env.EMAIL_PASS
     }
 });
-
 // Send email to user when hazard report is submitted
-export const sendUserReportConfirmation = async (userEmail: string, hazardData: any) => {
+export const sendUserReportConfirmation = async (userEmail, hazardData) => {
     try {
         const mailOptions = {
             from: process.env.EMAIL_USER,
@@ -44,18 +41,17 @@ export const sendUserReportConfirmation = async (userEmail: string, hazardData: 
                 </div>
             `
         };
-        
         await transporter.sendMail(mailOptions);
         console.log(`✅ User confirmation email sent to ${userEmail}`);
         return true;
-    } catch (error) {
+    }
+    catch (error) {
         console.error('❌ Error sending user email:', error);
         return false;
     }
 };
-
 // Send email to admin when new hazard report is submitted
-export const sendAdminReportAlert = async (hazardData: any, reporterName: string) => {
+export const sendAdminReportAlert = async (hazardData, reporterName) => {
     try {
         const mailOptions = {
             from: process.env.EMAIL_USER,
@@ -83,21 +79,19 @@ export const sendAdminReportAlert = async (hazardData: any, reporterName: string
                 </div>
             `
         };
-        
         await transporter.sendMail(mailOptions);
         console.log(`✅ Admin alert email sent for ${hazardData.hazard_type}`);
         return true;
-    } catch (error) {
+    }
+    catch (error) {
         console.error('❌ Error sending admin email:', error);
         return false;
     }
 };
-
 // Send email to user when hazard status is updated
-export const sendStatusUpdateEmail = async (userEmail: string, hazardData: any, newStatus: string) => {
+export const sendStatusUpdateEmail = async (userEmail, hazardData, newStatus) => {
     try {
         const statusColor = newStatus === 'Resolved' ? '#00ffaa' : '#ffcc00';
-        
         const mailOptions = {
             from: process.env.EMAIL_USER,
             to: userEmail,
@@ -116,28 +110,26 @@ export const sendStatusUpdateEmail = async (userEmail: string, hazardData: any, 
                         <p><strong>📅 Updated At:</strong> ${new Date().toLocaleString()}</p>
                     </div>
                     
-                    ${newStatus === 'Resolved' ? 
-                        '<p>✅ This hazard has been resolved. Thank you for your cooperation.</p>' : 
-                        '<p>🔄 Our team is actively working on this hazard. We will notify you when it is resolved.</p>'
-                    }
+                    ${newStatus === 'Resolved' ?
+                '<p>✅ This hazard has been resolved. Thank you for your cooperation.</p>' :
+                '<p>🔄 Our team is actively working on this hazard. We will notify you when it is resolved.</p>'}
                     
                     <hr style="margin: 20px 0;">
                     <p style="color: #666; font-size: 12px;">OceanPulse Hazard Monitoring System</p>
                 </div>
             `
         };
-        
         await transporter.sendMail(mailOptions);
         console.log(`✅ Status update email sent to ${userEmail}`);
         return true;
-    } catch (error) {
+    }
+    catch (error) {
         console.error('❌ Error sending status update email:', error);
         return false;
     }
 };
-
 // Send high risk alert to admin
-export const sendHighRiskAlert = async (hazardData: any) => {
+export const sendHighRiskAlert = async (hazardData) => {
     try {
         const mailOptions = {
             from: process.env.EMAIL_USER,
@@ -165,11 +157,11 @@ export const sendHighRiskAlert = async (hazardData: any) => {
                 </div>
             `
         };
-        
         await transporter.sendMail(mailOptions);
         console.log(`✅ High risk alert email sent to admin`);
         return true;
-    } catch (error) {
+    }
+    catch (error) {
         console.error('❌ Error sending high risk alert:', error);
         return false;
     }
