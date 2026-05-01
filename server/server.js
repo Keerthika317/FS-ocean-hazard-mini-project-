@@ -310,26 +310,38 @@ app.get('/api/user-hazards/:userId', (req, res) => {
 
 app.post('/api/hazards', upload.single('photo'), async (req, res) => {
     try {
+        console.log("Data received from frontend:", req.body);
+        
         const { user_id, hazard_type, location, severity, radius, people_affected } = req.body;
-        const photo_url = req.file ? req.file.filename : null;
         const [lat, lng] = getCoordinatesForLocation(location);
         
-        // This query matches the 9 values exactly
-        const sql = `INSERT INTO hazards (user_id, hazard_type, location, severity, radius, people_affected, photo_url, latitude, longitude) 
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
-        
-        const params = [user_id || null, hazard_type, location, severity, radius || 0, people_affected || 0, photo_url, lat, lng];
+        // Create an object exactly matching the database columns
+        const hazardData = {
+            user_id: user_id || null,
+            hazard_type: hazard_type,
+            location: location,
+            severity: severity || 'Low',
+            radius: radius || '0',
+            people_affected: people_affected || '0',
+            photo_url: req.file ? req.file.filename : null,
+            latitude: lat ? lat.toString() : null,
+            longitude: lng ? lng.toString() : null,
+            status: 'Pending'
+        };
 
-        db.query(sql, params, (err, result) => {
+        // This 'SET ?' syntax is the safest way to insert in Node.js
+        const sql = "INSERT INTO hazards SET ?";
+        
+        db.query(sql, hazardData, (err, result) => {
             if (err) {
                 console.error("DATABASE ERROR:", err.message);
                 return res.status(500).json({ error: err.message });
             }
-            console.log("Hazard reported successfully!");
+            console.log("Hazard saved with ID:", result.insertId);
             res.status(201).json({ message: 'Success', id: result.insertId });
         });
     } catch (error) {
-        console.error("SERVER CRASH:", error);
+        console.error("CRITICAL SERVER ERROR:", error);
         res.status(500).json({ error: "Internal Server Error" });
     }
 });
