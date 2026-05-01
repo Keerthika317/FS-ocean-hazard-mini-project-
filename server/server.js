@@ -312,33 +312,22 @@ app.post('/api/hazards', upload.single('photo'), async (req, res) => {
     try {
         const { user_id, hazard_type, location, severity, radius, people_affected } = req.body;
         const photo_url = req.file ? req.file.filename : null;
-        const [latitude, longitude] = getCoordinatesForLocation(location);
+        const [lat, lng] = getCoordinatesForLocation(location);
         
-        // This query has exactly 9 columns and 9 question marks
-        const sql = `INSERT INTO hazards (user_id, hazard_type, location, severity, radius, people_affected, photo_url, latitude, longitude) 
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
-        
-        const values = [user_id, hazard_type, location, severity, radius, people_affected, photo_url, latitude, longitude];
+        // This is a simplified query that matches the table exactly
+        const sql = "INSERT INTO hazards (user_id, hazard_type, location, severity, radius, people_affected, photo_url, latitude, longitude) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        const params = [user_id || null, hazard_type, location, severity, radius || 0, people_affected || 0, photo_url, lat, lng];
 
-        db.query(sql, values, async (err, result) => {
+        db.query(sql, params, (err, result) => {
             if (err) {
-                console.error("DATABASE ERROR:", err.message);
+                console.error("SQL ERROR:", err.message);
                 return res.status(500).json({ error: err.message });
             }
-
-            // Log activity
-            db.query('SELECT username FROM users WHERE id = ?', [user_id], (err2, users) => {
-                createActivityLog('Hazard Reported', users[0]?.username || 'User', hazard_type, location);
-            });
-
-            // Send notification
-            await createNotification(user_id, 'user', `Report submitted for ${location}`, 'success');
-            
-            res.status(201).json({ message: 'Report submitted', id: result.insertId });
+            res.status(201).json({ message: 'Success', id: result.insertId });
         });
     } catch (error) {
         console.error("SERVER ERROR:", error);
-        res.status(500).json({ error: "Internal Server Error" });
+        res.status(500).json({ error: "Server crashed" });
     }
 });
 
