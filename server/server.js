@@ -309,39 +309,33 @@ app.get('/api/user-hazards/:userId', (req, res) => {
 });
 
 app.post('/api/hazards', upload.single('photo'), (req, res) => {
-    try {
-        const { user_id, hazard_type, location, severity, radius, people_affected } = req.body;
-        const [lat, lng] = getCoordinatesForLocation(location);
-        const photo_url = req.file ? req.file.filename : null;
+    const { user_id, hazard_type, location, severity, radius, people_affected } = req.body;
+    const [lat, lng] = getCoordinatesForLocation(location);
+    const photo_url = req.file ? req.file.filename : null;
 
-        // THE FINAL FIX: Standard SQL with 10 columns and 10 values
-        const sql = "INSERT INTO hazards (user_id, hazard_type, location, severity, radius, people_affected, photo_url, latitude, longitude, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        
-        const values = [
-            user_id || "1",
-            hazard_type || "Other",
-            location || "Unknown",
-            severity || "Low",
-            String(radius || "0"),
-            String(people_affected || "0"),
-            photo_url,
-            String(lat || ""),
-            String(lng || ""),
-            "Pending"
-        ];
+    // Standard SQL with exactly 10 columns and 10 values
+    const sql = "INSERT INTO hazards (user_id, hazard_type, location, severity, radius, people_affected, photo_url, latitude, longitude, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    
+    const values = [
+        String(user_id || "1"),
+        String(hazard_type || "General"),
+        String(location || "Unknown"),
+        String(severity || "Low"),
+        String(radius || "0"),
+        String(people_affected || "0"),
+        photo_url,
+        String(lat || ""),
+        String(lng || ""),
+        "Pending"
+    ];
 
-        db.query(sql, values, (err, result) => {
-            if (err) {
-                console.error("DATABASE ERROR:", err.message);
-                return res.status(500).json({ error: err.message });
-            }
-            console.log("Hazard saved! ID:", result.insertId);
-            res.status(201).json({ message: 'Success', id: result.insertId });
-        });
-    } catch (error) {
-        console.error("SERVER CRASH:", error);
-        res.status(500).json({ error: "Internal Server Error" });
-    }
+    db.query(sql, values, (err, result) => {
+        if (err) {
+            console.error("DATABASE ERROR:", err.message);
+            return res.status(500).json({ error: err.message });
+        }
+        res.status(201).json({ message: 'Success', id: result.insertId });
+    });
 });
 
 app.put('/api/hazards/:id/status', requireEditor, async (req, res) => {
