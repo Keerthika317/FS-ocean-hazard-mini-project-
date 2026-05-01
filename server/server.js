@@ -314,20 +314,23 @@ app.post('/api/hazards', upload.single('photo'), async (req, res) => {
         const photo_url = req.file ? req.file.filename : null;
         const [lat, lng] = getCoordinatesForLocation(location);
         
-        // This is a simplified query that matches the table exactly
-        const sql = "INSERT INTO hazards (user_id, hazard_type, location, severity, radius, people_affected, photo_url, latitude, longitude) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        // This query matches the 9 values exactly
+        const sql = `INSERT INTO hazards (user_id, hazard_type, location, severity, radius, people_affected, photo_url, latitude, longitude) 
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+        
         const params = [user_id || null, hazard_type, location, severity, radius || 0, people_affected || 0, photo_url, lat, lng];
 
         db.query(sql, params, (err, result) => {
             if (err) {
-                console.error("SQL ERROR:", err.message);
+                console.error("DATABASE ERROR:", err.message);
                 return res.status(500).json({ error: err.message });
             }
+            console.log("Hazard reported successfully!");
             res.status(201).json({ message: 'Success', id: result.insertId });
         });
     } catch (error) {
-        console.error("SERVER ERROR:", error);
-        res.status(500).json({ error: "Server crashed" });
+        console.error("SERVER CRASH:", error);
+        res.status(500).json({ error: "Internal Server Error" });
     }
 });
 
