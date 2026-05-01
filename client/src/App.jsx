@@ -645,37 +645,23 @@ function App() {
         setSubmitting(false);
     }
 };
-    const handleUpdateStatus = async (id, status) => {
-        if (adminRole !== 'editor') {
-            toast.error('Edit mode required');
-            return;
-        }
-        try {
-            await axios.put(`${API_URL}/api/hazards/${id}/status`, { status }, { headers: { 'x-admin-role': adminRole } });
-            toast.success(`Status updated to ${status}`);
-            fetchAdminData();
-            setRecentlyUpdatedId(id);
-            setTimeout(() => setRecentlyUpdatedId(null), 5000);
-        } catch (error) {
-            toast.error('Failed to update');
-        }
-    };
+   const handleUpdateStatus = async (id, status) => {
+    try {
+        await axios.put(`${API_URL}/api/hazards/${id}/status`, { status });
+        toast.success(`Status updated!`);
+        fetchAdminData(); // This updates charts and counts in real-time
+    } catch (error) { toast.error('Update failed'); }
+};
 
-    const handleDeleteHazard = async (id) => {
-        if (adminRole !== 'editor') {
-            toast.error('Edit mode required');
-            return;
-        }
-        if (window.confirm('Delete this hazard?')) {
-            try {
-                await axios.delete(`${API_URL}/api/hazards/${id}`, { headers: { 'x-admin-role': adminRole } });
-                toast.success('Deleted');
-                fetchAdminData();
-            } catch (error) {
-                toast.error('Failed to delete');
-            }
-        }
-    };
+const handleDeleteHazard = async (id) => {
+    if (window.confirm('Delete this report?')) {
+        try {
+            await axios.delete(`${API_URL}/api/hazards/${id}`);
+            toast.success('Deleted successfully');
+            fetchAdminData(); // This updates charts and counts in real-time
+        } catch (error) { toast.error('Delete failed'); }
+    }
+};
 
     const handleMarkRead = async (id) => {
         try {

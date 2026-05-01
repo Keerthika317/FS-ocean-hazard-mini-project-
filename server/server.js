@@ -341,37 +341,17 @@ app.post('/api/hazards', upload.single('photo'), (req, res) => {
     });
 });
 
-app.put('/api/hazards/:id/status', requireEditor, async (req, res) => {
-    const { status } = req.body;
-    const hazardId = req.params.id;
-    db.query('SELECT * FROM hazards WHERE id = ?', [hazardId], async (err, hazards) => {
-        if (err || hazards.length === 0) return res.status(404).json({ error: 'Not found' });
-        const hazard = hazards[0];
-        db.query('UPDATE hazards SET status = ?, updated_at = NOW() WHERE id = ?', [status, hazardId], async (err2) => {
-            if (err2) return res.status(500).json({ error: err2.message });
-            if (hazard.user_id) {
-                await createNotification(hazard.user_id, 'user', `Your ${hazard.hazard_type} report status changed to ${status}`, 'info');
-            }
-            res.json({ message: 'Status updated' });
-        });
+app.put('/api/hazards/:id/status', (req, res) => {
+    db.query('UPDATE hazards SET status = ? WHERE id = ?', [req.body.status, req.params.id], (err) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ message: 'Status updated' });
     });
 });
 
-app.delete('/api/hazards/:id', requireEditor, async (req, res) => {
-    const hazardId = req.params.id;
-    db.query('SELECT * FROM hazards WHERE id = ?', [hazardId], async (err, hazards) => {
-        if (err || hazards.length === 0) return res.status(404).json({ error: 'Not found' });
-        const hazard = hazards[0];
-        db.query('DELETE FROM hazards WHERE id = ?', [hazardId], async (err2) => {
-            if (err2) return res.status(500).json({ error: err2.message });
-            db.query('SELECT username FROM users WHERE id = ?', [hazard.user_id], (err3, users) => {
-                createActivityLog('Hazard Deleted', users[0]?.username || 'Unknown', hazard.hazard_type, hazard.location, 'Deleted by admin');
-            });
-            if (hazard.user_id) {
-                await createNotification(hazard.user_id, 'user', `Your ${hazard.hazard_type} report at ${hazard.location} has been deleted.`, 'warning');
-            }
-            res.json({ message: 'Hazard deleted successfully' });
-        });
+app.delete('/api/hazards/:id', (req, res) => {
+    db.query('DELETE FROM hazards WHERE id = ?', [req.params.id], (err) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ message: 'Deleted successfully' });
     });
 });
 
