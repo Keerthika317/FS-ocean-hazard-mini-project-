@@ -313,26 +313,32 @@ app.post('/api/hazards', upload.single('photo'), (req, res) => {
         const { user_id, hazard_type, location, severity, radius, people_affected } = req.body;
         const [lat, lng] = getCoordinatesForLocation(location);
         
-        const hazardData = {
-            user_id: user_id || "1",
-            hazard_type: hazard_type || "General",
-            location: location || "Unknown",
-            severity: severity || "Low",
-            radius: String(radius || "0"),
-            people_affected: String(people_affected || "0"),
-            photo_url: req.file ? req.file.filename : null,
-            latitude: String(lat || ""),
-            longitude: String(lng || ""),
-            status: "Pending"
-        };
+        const photo_url = req.file ? req.file.filename : null;
 
-        // This matches the table from Step 1 perfectly
-        db.query("INSERT INTO hazards SET ?", hazardData, (err, result) => {
+        // THE GUARANTEED FIX: Explicitly naming every column and every value
+        const sql = `INSERT INTO hazards 
+            (user_id, hazard_type, location, severity, radius, people_affected, photo_url, latitude, longitude, status) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+        
+        const values = [
+            user_id || "1", 
+            hazard_type || "General", 
+            location || "Unknown", 
+            severity || "Low", 
+            String(radius || "0"), 
+            String(people_affected || "0"), 
+            photo_url, 
+            String(lat || ""), 
+            String(lng || ""), 
+            "Pending"
+        ];
+
+        db.query(sql, values, (err, result) => {
             if (err) {
                 console.error("DATABASE ERROR:", err.message);
                 return res.status(500).json({ error: err.message });
             }
-            console.log("Hazard Saved Successfully!");
+            console.log("Success! New Hazard ID:", result.insertId);
             res.status(201).json({ message: 'Success', id: result.insertId });
         });
     } catch (error) {
