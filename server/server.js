@@ -63,9 +63,24 @@ const getCoordinatesForLocation = (location) => {
 // AUTH ROUTES
 app.post('/api/signup', (req, res) => {
     const { username, password, email } = req.body;
-    db.query('INSERT INTO users (username, password, email, role) VALUES (?, ?, ?, "user")', [username, password, email], (err, result) => {
-        if (err) return res.status(500).json({ error: err.message });
-        db.query('INSERT INTO notifications (user_id, message, type) VALUES (?, "Welcome to OceanPulse!", "success")', [result.insertId]);
+    
+    // We use '?' placeholders for EVERYTHING to prevent errors
+    const sql = 'INSERT INTO users (username, password, email, role) VALUES (?, ?, ?, ?)';
+    
+    db.query(sql, [username, password, email, 'user'], (err, result) => {
+        if (err) {
+            console.error("SIGNUP ERROR:", err.message);
+            return res.status(500).json({ error: err.message });
+        }
+        
+        // Create a welcome notification (Optional, wrapped in try/catch so it doesn't crash signup)
+        try {
+            db.query('INSERT INTO notifications (user_id, message) VALUES (?, ?)', 
+            [result.insertId, 'Welcome to OceanPulse! Your account is ready.']);
+        } catch (e) {
+            console.log("Notification failed but user was created.");
+        }
+
         res.status(201).json({ message: 'Success', id: result.insertId });
     });
 });
