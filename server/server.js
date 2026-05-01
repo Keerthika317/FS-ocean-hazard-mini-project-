@@ -308,39 +308,39 @@ app.get('/api/user-hazards/:userId', (req, res) => {
     });
 });
 
-app.post('/api/hazards', upload.single('photo'), async (req, res) => {
+app.post('/api/hazards', upload.single('photo'), (req, res) => {
     try {
         const { user_id, hazard_type, location, severity, radius, people_affected } = req.body;
         const [lat, lng] = getCoordinatesForLocation(location);
         
-        // This format matches the table we just created in Step 1
+        // We create an object that matches the table columns exactly
         const hazardData = {
-            user_id: user_id || null,
-            hazard_type: hazard_type,
-            location: location,
-            severity: severity || 'Low',
-            radius: radius || '0',
-            people_affected: people_affected || '0',
+            user_id: user_id || "1", // Defaults to 1 if missing
+            hazard_type: hazard_type || "Unknown",
+            location: location || "Unknown",
+            severity: severity || "Low",
+            radius: String(radius || "0"),
+            people_affected: String(people_affected || "0"),
             photo_url: req.file ? req.file.filename : null,
-            latitude: lat ? lat.toString() : null,
-            longitude: lng ? lng.toString() : null,
-            status: 'Pending'
+            latitude: String(lat || ""),
+            longitude: String(lng || ""),
+            status: "Pending"
         };
 
-        console.log("Saving Hazard to Database:", hazardData);
+        console.log("Attempting to save:", hazardData);
 
-        // Using 'SET ?' is the safest way to avoid "Column Count" errors
+        // This 'SET ?' automatically maps keys to columns
         db.query("INSERT INTO hazards SET ?", hazardData, (err, result) => {
             if (err) {
                 console.error("DATABASE ERROR:", err.message);
                 return res.status(500).json({ error: err.message });
             }
-            console.log("Success! Hazard ID:", result.insertId);
+            console.log("Success! ID:", result.insertId);
             res.status(201).json({ message: 'Success', id: result.insertId });
         });
     } catch (error) {
         console.error("SERVER CRASH:", error);
-        res.status(500).json({ error: "Internal Server Error" });
+        res.status(500).json({ error: "Server Error" });
     }
 });
 
